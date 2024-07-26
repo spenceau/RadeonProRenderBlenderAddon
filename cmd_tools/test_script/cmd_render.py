@@ -9,12 +9,8 @@ import sys
 from dotenv import load_dotenv
 import zipfile
 
-
-def extract_addon_to_module(blender_path, blender_version):
-    target_dir = os.path.join(blender_path, blender_version, 'scripts', 'modules')
-    
-    if not os.path.exists(target_dir):
-        raise FileNotFoundError(f"Target directory {target_dir} does not exist.")
+# unzips addon into the target directory
+def extract_addon_to_module(target_dir):
     
     # Extract the ZIP file to the target directory
     with zipfile.ZipFile(addon, 'r') as zip_ref:
@@ -23,11 +19,10 @@ def extract_addon_to_module(blender_path, blender_version):
     print(f"Addon extracted to {target_dir}")
 
 
-def remove_rprblender(blender_path, blender_version):
-    target_dir = os.path.join(blender_path, blender_version, 'scripts', 'modules', 'rprblender')
-
+def remove_rprblender(target_dir):
     try:
-        shutil.rmtree(target_dir, ignore_errors=True)
+        addon = os.path.join(target_dir, "rprblender")
+        shutil.rmtree(addon, ignore_errors=True)
         print(f"rprblender removed successfully from {target_dir}.")
     except Exception as e:
         print(f"Error removing rprblender: {e}")
@@ -48,17 +43,25 @@ if __name__ == "__main__":
     blender_path = os.getenv('BLENDER_PATH')
     blender_version = os.path.basename(blender_path).split()[-1]
     blender_exe = os.path.join(blender_path, "blender.exe")
+
     addon = os.getenv('ADDON_ZIP')
     blender_files = os.getenv('SCENE_PATH')
     scene = os.getenv('SCENE_NAME')
+    build = os.path.basename(addon)
+    output_dir = os.path.join("Render_Output", os.path.basename(addon))
+
     ground_truth = os.getenv('GROUND_TRUTH')
     viewport_flag = os.getenv('VIEWPORT_FLAG')
 
     print(f"Blender Version: {blender_version}")
     print(f"Scene name: {scene}")
 
+    #target_dir = os.path.join(blender_path, blender_version, 'scripts', 'modules')
+
+    target_dir = os.path.join(os.getcwd(), "addon", "modules")
+
     # extract zip file to blender's modules subdir in scripts
-    extract_addon_to_module(blender_path, blender_version)
+    extract_addon_to_module(target_dir)
 
     # Always run final_render.py
     final_render_command = [
@@ -67,9 +70,10 @@ if __name__ == "__main__":
         '--python', script,
         blender_files,
         scene,
-        addon,
-        blender_path,
-        blender_version
+        # addon,
+        # blender_path,
+        # blender_version,
+        output_dir
 
     ]
     subprocess.run(final_render_command)
@@ -78,7 +82,7 @@ if __name__ == "__main__":
     compare_render_command = [
         'python', 'compare_render.py',
         '--ground-truth-dir', ground_truth,
-        '--output-dir', scene,
+        '--output-dir', output_dir,
         '--scene-name', scene
     ]
     subprocess.run(compare_render_command)
@@ -95,4 +99,4 @@ if __name__ == "__main__":
     if viewport_flag == 1:
         subprocess.check_call(viewport_render_command)
 
-    remove_rprblender(blender_path, blender_version)
+    remove_rprblender(target_dir)

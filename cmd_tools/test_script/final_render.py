@@ -1,21 +1,17 @@
 import os
 import shutil
-import zipfile
-import importlib
 from pathlib import Path
 import sys
 
 
-def create_output_dir(scene_name):
-    output_dir = os.path.abspath(scene_name)
+def create_output_dir(addon_name):
+    output_dir = os.path.abspath(addon_name)
 
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-
-    os.makedirs(output_dir)
-
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
     return output_dir
-
+  
 
 def print_sys_path():
     print("SYS.PATH FOR final_render.py")
@@ -23,10 +19,10 @@ def print_sys_path():
         print(f"{i}: {path}")
 
 
-def render_final_image(blender_files, scene):
+def render_final_image(blender_files, scene, addon_name):
 
     import bpy
-    output_dir = create_output_dir(scene_name=scene)
+    output_dir = create_output_dir(addon_name)
 
     bpy.context.scene.render.engine = 'RPR'
     temp_path = os.path.join(blender_files, scene + ".blend")
@@ -55,12 +51,13 @@ def main():
 
     blender_files = sys.argv[4]
     scene = sys.argv[5]
+    addon_name = sys.argv[6]
 
     #install_and_enable_addon()
     import rprblender
     rprblender.register()
 
-    render_final_image(blender_files, scene)
+    render_final_image(blender_files, scene, addon_name)
 
 
 if __name__ == "__main__":
